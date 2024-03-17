@@ -235,73 +235,57 @@
             isMoving = false;
         });
 
-	function generateCode() {
-    var htmlCode = '';
-    var cssCode = '';
-    var imagesPath = ''; // Store the path to the images folder
+        function generateCode() {
+            var htmlCode = '';
+            var cssCode = '';
+            for (var i = 0; i < blocks.length; i++) {
+                var block = blocks[i];
+                var blockNameInput = block.querySelector('input[type="text"]');
+                var blockName = blockNameInput.value || 'block_' + i; // Use input value if provided, else generate default name
+                var blockContent = block.innerHTML.replace(blockNameInput.outerHTML, ''); // Remove the input field from block content
 
-    for (var i = 0; i < blocks.length; i++) {
-        var block = blocks[i];
-        var blockNameInput = block.querySelector('input[type="text"]');
-        var blockName = blockNameInput.value || 'block_' + i; // Use input value if provided, else generate default name
-        var blockContent = block.innerHTML.replace(blockNameInput.outerHTML, ''); // Remove the input field from block content
+                var topPosition = parseInt(block.style.top);
+                var leftPosition = parseInt(block.style.left);
+                var blockWidth = parseInt(block.style.width);
+                var blockHeight = parseInt(block.style.height);
 
-        var topPosition = parseInt(block.style.top);
-        var leftPosition = parseInt(block.style.left);
-        var blockWidth = parseInt(block.style.width);
-        var blockHeight = parseInt(block.style.height);
-
-        htmlCode += '\t<div id="' + blockName + '">' + blockContent + '</div>\n'; // Include block content in generated HTML
-        cssCode += '#' + blockName + ' { \n' +
-            '    position: absolute; \n' +
-            '    top: ' + topPosition + 'px; \n' +
-            '    left: ' + leftPosition + 'px; \n' +
-            '    width: ' + blockWidth + 'px; \n' +
-            '    height: ' + blockHeight + 'px; \n' +
-            '} \n';
-
-        // Collect image sources for each block
-        var images = block.getElementsByTagName('img');
-        for (var j = 0; j < images.length; j++) {
-            var imagePath = images[j].src;
-            if (imagePath.startsWith('blob:')) {
-                // If the image source is a blob, we need to resolve it to the file path
-                var file = new File([imagePath], 'image.png'); // Create a file from blob
-                imagesPath += '<img src="' + file.path + '">\n';
-            } else {
-                // If the image source is already a file path, use it as it is
-                imagesPath += '<img src="' + imagePath + '">\n';
+                htmlCode += '\t<div id="' + blockName + '">' + blockContent + '</div>\n'; // Include block content in generated HTML
+                cssCode += '#' + blockName + ' { \n' +
+                    '    position: absolute; \n' +
+                    '    top: ' + topPosition + 'px; \n' +
+                    '    left: ' + leftPosition + 'px; \n' +
+                    '    width: ' + blockWidth + 'px; \n' +
+                    '    height: ' + blockHeight + 'px; \n' +
+                    '} \n';
             }
+
+            // Add CSS rule to hide the red block
+            cssCode += '.red-block { display: none; } \n';
+
+            var generatedCode = '<!DOCTYPE html> \n' +
+                '<html lang="en"> \n' +
+                '<head> \n' +
+                '    <meta charset="UTF-8"> \n' +
+                '    <meta name="viewport" content="width=device-width, initial-scale=1.0"> \n' +
+                '    <title>Generated Block</title> \n' +
+                '    <style> \n' +
+                '        ' + cssCode + ' \n' +
+                '    </style> \n' +
+                '</head> \n' +
+                '<body> \n' +
+                htmlCode + // Insert generated HTML code
+                '</body> \n' +
+                '</html>';
+
+            console.log(generatedCode);
+
+            // Download the generated code as an HTML/CSS file
+            var blob = new Blob([generatedCode], { type: 'text/html' });
+            var a = document.createElement('a');
+            a.download = 'generated_block.html';
+            a.href = URL.createObjectURL(blob);
+            a.click();
         }
-    }
-
-    // Add CSS rule to hide the red block
-    cssCode += '.red-block { display: none; } \n';
-
-    var generatedCode = '<!DOCTYPE html> \n' +
-        '<html lang="en"> \n' +
-        '<head> \n' +
-        '    <meta charset="UTF-8"> \n' +
-        '    <meta name="viewport" content="width=device-width, initial-scale=1.0"> \n' +
-        '    <title>Generated Block</title> \n' +
-        '    <style> \n' +
-        '        ' + cssCode + ' \n' +
-        '    </style> \n' +
-        '</head> \n' +
-        '<body> \n' +
-        htmlCode + // Insert generated HTML code
-        '\n' + imagesPath + // Insert image paths
-        '</body> \n' +
-        '</html>';
-
-    // Download the generated code as an HTML file
-    var blob = new Blob([generatedCode], { type: 'text/html' });
-    var a = document.createElement('a');
-    a.download = 'generated_block.html';
-    a.href = URL.createObjectURL(blob);
-    a.click();
-}
-
 
 
         function selectBlock(block) {
