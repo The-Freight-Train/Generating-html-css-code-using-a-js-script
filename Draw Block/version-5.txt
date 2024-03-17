@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Block Drawer</title>
+    <style>
+        #canvas {
+            position: relative;
+            width: 1240px;
+            height: 1200px;
+            border: 1px solid #000;
+            cursor: crosshair; /* Change cursor to crosshair for drawing */
+        }
+
+        .block {
+            position: absolute;
+            background-color: lightgrey;
+            border: 2px solid #000;
+            cursor: move; /* Change cursor to move when hovering over block */
+            padding: 5px;
+        }
+
+        .block input[type="text"] {
+            width: 100%;
+            border: none;
+            background: none;
+            text-align: center;
+            font-family: inherit;
+        }
+
+        .resizer {
+            width: 8px;
+            height: 8px;
+            background-color: #000;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            cursor: se-resize;
+        }
+
+        .selected {
+            border: 2px dashed blue; /* Add a dashed border to indicate selection */
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas" onmousedown="handleMouseDown(event)" onmousemove="stretchBlock(event)" onmouseup="stopDrawing(event)"></div>
+    <button onclick="zoomIn()">Zoom In</button>
+    <button onclick="zoomOut()">Zoom Out</button>
+    <button onclick="undo()">Undo</button>
+    <button onclick="generateCode()">Generate HTML/CSS</button>
+
+    <script>
+        var isDrawing = false;
+        var isResizing = false;
+        var isMoving = false;
+        var initialX, initialY;
+        var offsetX, offsetY;
+        var currentBlock;
+        var blocks = []; // Array to store created blocks
+        var selectedBlock = null; // Track the currently selected block
+        var canvasRect;
+
+        window.onload = function() {
+            canvasRect = document.getElementById('canvas').getBoundingClientRect();
+        }
+
+        function handleMouseDown(event) {
+            if (event.target.tagName === 'INPUT') return; // Prevent drawing if clicking on an input field
+            if (event.button === 2) {
+                // Right mouse button click
+                startMove(event);
+            } else {
+                // Left mouse button click
+                var clickedBlock = event.target.closest('.block');
+                if (clickedBlock) {
+                    selectBlock(clickedBlock);
+                    startMove(event);
+                } else {
+                    if (isResizing) return; // Prevent starting a new block if resizing
+                    if (selectedBlock) deselectBlock(); // Deselect the previously selected block
+                    if (!isDrawing && !isResizing && !isMoving) startDrawing(event); // Start drawing only if not resizing or moving
+                }
+            }
+        }
+
+        function startDrawing(event) {
+            isDrawing = true;
+            initialX = event.clientX - canvasRect.left + window.scrollX;
+            initialY = event.clientY - canvasRect.top + window.scrollY;
+            currentBlock = document.createElement('div');
+            currentBlock.className = 'block';
+            currentBlock.style.left = initialX + 'px';
+            currentBlock.style.top = initialY + 'px';
+            currentBlock.innerHTML = '<form onsubmit="submitContent(event)"><input type="text" placeholder="Block Name"><input type="text" placeholder="Text"><input type="file"><button type="submit">Add Content</button></form>';
+            currentBlock.innerHTML += '<div class="resizer" onmousedown="startResize(event)"></div>'; // Add resize handler
+            document.getElementById('canvas').appendChild(currentBlock);
+            currentBlock.querySelector('input').focus();
+        }
+
+        function submitContent(event) {
+            event.preventDefault();
+            var form = event.target;
+            var blockName = form.querySelector('input[type="text"]').value || 'Block';
+            var text = form.querySelectorAll('input[type="text"]')[1].value || '';
+            var imageFile = form.querySelector('input[type="file"]').files[0];
+
+            form.parentElement.removeChild(form); // Remove the form
+
+            var block = document.createElement('div');
+            block.className = 'block';
+            block.innerHTML = '<input type="text" value="' + blockName + '">';
+            block.innerHTML += text ? '<p>' + text + '</p>' : '';
+            if (imageFile) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var img = document.createElement('img');
+                    img.src = e.target.result;
+                    block.appendChild(img);
+                    currentBlock.appendChild(block);
+                };
+                reader.readAsDataURL(imageFile);
+            } else {
+                currentBlock.appendChild(block);
+            }
+        }
+
+        function stretchBlock(event) {
+            if (!isDrawing && !isResizing && !isMoving) return;
+            if (isDrawing) {
+                var deltaX = event.clientX - canvasRect.left + window.scrollX - initialX;
+                var deltaY = event.clientY - canvasRect.top + window.scrollY - initialY;
+                currentBlock.style.width = Math.abs(deltaX) + 'px';
+                currentBlock.style.height = Math.abs(deltaY) + 'px';
+                currentBlock.style.left = (deltaX > 0 ? initialX : initialX + deltaX) + 'px';
+                currentBlock.style.top = (deltaY > 0 ? initialY : initialY + deltaY) + 'px';
+            } else if (isResizing) {
+                var newWidth = event.clientX - canvasRect.left + window.scrollX - parseInt(currentBlock.style.left);
+                var newHeight = event.clientY - canvasRect.top + window.scrollY - parseInt(currentBlock.style.top);
+                currentBlock.style.width = newWidth + 'px';
+                currentBlock.style.height = newHeight + 'px';
+            } else if (isMoving) {
+                var newX = event.clientX - canvasRect.left + window.scrollX - offsetX;
+                var newY = event.clientY - canvasRect.top + window.scrollY - offsetY;
+                currentBlock.style.left = newX + 'px';
+                currentBlock.style.top = newY + 'px';
+            }
+        }
+
+        function stopDrawing() {
+            if (isDrawing) {
+                isDrawing = false;
+                blocks.push(currentBlock); // Store the created block
+            }
+            if (isMoving) {
+                isMoving = false;
+            }
+        }
+
+        function undo() {
+            if (blocks.length > 0) {
+                var lastBlock = blocks.pop(); // Remove the last block from the array
+                lastBlock.remove(); // Remove the block from the canvas
+            }
+        }
+
+        function startResize(event) {
+            isResizing = true;
+            event.preventDefault();
+            event.stopPropagation();
+        }
+
+        function startMove(event) {
+            isMoving = true;
+            offsetX = event.clientX - canvasRect.left + window.scrollX - parseInt(currentBlock.style.left);
+            offsetY = event.clientY - canvasRect.top + window.scrollY - parseInt(currentBlock.style.top);
+            event.preventDefault();
+            event.stopPropagation();
+        }
+
+        window.addEventListener('mouseup', function() {
+            isResizing = false;
+            isMoving = false;
+        });
+
+      function generateCode() {
+    var htmlCode = '';
+    var cssCode = '';
+    for (var i = 0; i < blocks.length; i++) {
+        var block = blocks[i];
+        var blockNameInput = block.querySelector('input[type="text"]');
+        var blockName = blockNameInput.value || 'block_' + i; // Use input value if provided, else generate default name
+        var blockContent = block.innerHTML.replace(blockNameInput.outerHTML, ''); // Remove the input field from block content
+
+        var topPosition = parseInt(block.style.top);
+        var leftPosition = parseInt(block.style.left);
+        var blockWidth = parseInt(block.style.width);
+        var blockHeight = parseInt(block.style.height);
+
+        htmlCode += '\t<div id="' + blockName + '">' + blockContent + '</div>\n'; // Include block content in generated HTML
+        cssCode += '#' + blockName + ' { \n' +
+                   '    position: absolute; \n' +
+                   '    top: ' + topPosition + 'px; \n' +
+                   '    left: ' + leftPosition + 'px; \n' +
+                   '    width: ' + blockWidth + 'px; \n' +
+                   '    height: ' + blockHeight + 'px; \n' +
+                   '} \n';
+    }
+
+    // Add CSS rule to hide the red block
+    cssCode += '.red-block { display: none; } \n';
+
+    var generatedCode = '<!DOCTYPE html> \n' +
+                        '<html lang="en"> \n' +
+                        '<head> \n' +
+                        '    <meta charset="UTF-8"> \n' +
+                        '    <meta name="viewport" content="width=device-width, initial-scale=1.0"> \n' +
+                        '    <title>Generated Block</title> \n' +
+                        '    <style> \n' +
+                        '        ' + cssCode + ' \n' +
+                        '    </style> \n' +
+                        '</head> \n' +
+                        '<body> \n' +
+                        htmlCode + // Insert generated HTML code
+                        '</body> \n' +
+                        '</html>';
+
+    console.log(generatedCode);
+
+    // Download the generated code as an HTML/CSS file
+    var blob = new Blob([generatedCode], { type: 'text/html' });
+    var a = document.createElement('a');
+    a.download = 'generated_block.html';
+    a.href = URL.createObjectURL(blob);
+    a.click();
+}
+
+
+        function selectBlock(block) {
+            deselectBlock(); // Deselect any previously selected block
+            selectedBlock = block;
+            selectedBlock.classList.add('selected');
+        }
+
+        function deselectBlock() {
+            if (selectedBlock) {
+                selectedBlock.classList.remove('selected');
+                selectedBlock = null;
+            }
+        }
+
+        document.addEventListener('click', function(event) {
+            var clickedBlock = event.target.closest('.block');
+            if (clickedBlock) {
+                selectBlock(clickedBlock);
+            } else {
+                deselectBlock();
+            }
+        });
+
+        // Zoom in function
+        function zoomIn() {
+            var canvas = document.getElementById('canvas');
+            canvas.style.width = canvas.offsetWidth * 1.1 + 'px';
+            canvas.style.height = canvas.offsetHeight * 1.1 + 'px';
+        }
+
+        // Zoom out function
+        function zoomOut() {
+            var canvas = document.getElementById('canvas');
+            canvas.style.width = canvas.offsetWidth * 0.9 + 'px';
+            canvas.style.height = canvas.offsetHeight * 0.9 + 'px';
+        }
+    </script>
+</body>
+</html>

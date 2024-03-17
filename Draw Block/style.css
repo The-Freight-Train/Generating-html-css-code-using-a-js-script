@@ -1,0 +1,79 @@
+/* Dark mode styles */
+
+body {
+    background-color: #111; /* Dark background color */
+    color: #eee; /* Light text color */
+}
+
+/* General styles */
+input[type="number"] {
+    width: 60px;
+}
+
+button {
+    margin-bottom: 10px;
+    padding: 12px 20px;
+    background-color: #555; /* Dark gray */
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+button:hover {
+    background-color: #777; /* Slightly lighter gray */
+}
+
+label {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 18px;
+    color: #eee; /* Light gray */
+}
+
+/* Input fields */
+input[type="text"],
+input[type="number"],
+input[type="file"] {
+    display: block;
+    width: calc(100% - 22px);
+    margin-bottom: 12px;
+    padding: 10px;
+    border: 2px solid #555; /* Dark gray border */
+    border-radius: 6px;
+    font-size: 16px;
+    transition: border-color 0.3s ease;
+    color: #eee; /* Light gray text */
+    background-color: #333; /* Darker background */
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="file"]:focus {
+    outline: none;
+    border-color: #007bff; /* Highlight border color on focus */
+}
+
+/* Adjust placeholder width and color */
+input[type="text"]::placeholder,
+input[type="number"]::placeholder,
+input[type="file"]::placeholder {
+    font-size: 14px; /* Smaller placeholder font size */
+    color: #999; /* Light gray placeholder text */
+}
+
+/* Scale factor */
+#scaleFactor {
+    width: 100px;
+}
+
+/* Canvas */
+canvas {
+    margin-bottom: 20px;
+    border: 2px solid #555; /* Dark gray border */
+    border-radius: 8px;
+    cursor: crosshair;
+    background-color: lightgrey; /* Light gray background */
+}

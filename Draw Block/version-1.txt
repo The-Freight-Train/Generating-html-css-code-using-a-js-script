@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Block Drawer</title>
+    <style>
+        #canvas {
+            position: relative;
+            width: 500px;
+            height: 300px;
+            border: 1px solid #000;
+            cursor: crosshair; /* Change cursor to crosshair for drawing */
+        }
+
+        .block {
+            position: absolute;
+            background-color: red;
+            border: 2px solid #000;
+            cursor: move; /* Change cursor to move when hovering over block */
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas" onmousedown="startDrawing(event)" onmousemove="stretchBlock(event)" onmouseup="stopDrawing()"></div>
+    <button onclick="generateCode()">Generate HTML/CSS</button>
+
+    <script>
+        var isDrawing = false;
+        var initialX, initialY;
+        var currentBlock;
+
+        function startDrawing(event) {
+            isDrawing = true;
+            initialX = event.clientX;
+            initialY = event.clientY;
+            currentBlock = document.createElement('div');
+            currentBlock.className = 'block';
+            currentBlock.style.left = initialX + 'px';
+            currentBlock.style.top = initialY + 'px';
+            document.getElementById('canvas').appendChild(currentBlock);
+        }
+
+        function stretchBlock(event) {
+            if (!isDrawing) return;
+            var deltaX = event.clientX - initialX;
+            var deltaY = event.clientY - initialY;
+            currentBlock.style.width = Math.abs(deltaX) + 'px';
+            currentBlock.style.height = Math.abs(deltaY) + 'px';
+            currentBlock.style.left = (deltaX > 0 ? initialX : event.clientX) + 'px';
+            currentBlock.style.top = (deltaY > 0 ? initialY : event.clientY) + 'px';
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function generateCode() {
+            var blocks = document.getElementsByClassName('block');
+            var htmlCode = '';
+            var cssCode = '';
+            for (var i = 0; i < blocks.length; i++) {
+                var block = blocks[i];
+                var topPosition = parseInt(block.style.top);
+                var leftPosition = parseInt(block.style.left);
+                var blockWidth = parseInt(block.style.width);
+                var blockHeight = parseInt(block.style.height);
+                var blockID = 'block_' + i;
+                htmlCode += '<div id="' + blockID + '"></div>';
+                cssCode += '#' + blockID + ' { \n' +
+                           '    position: absolute; \n' +
+                           '    top: ' + topPosition + 'px; \n' +
+                           '    left: ' + leftPosition + 'px; \n' +
+                           '    width: ' + blockWidth + 'px; \n' +
+                           '    height: ' + blockHeight + 'px; \n' +
+                           '    background-color: red; \n' +
+                           '    border: 2px solid #000; \n' +
+                           '} \n';
+            }
+
+            var generatedCode = '<!DOCTYPE html> \n' +
+                                '<html lang="en"> \n' +
+                                '<head> \n' +
+                                '    <meta charset="UTF-8"> \n' +
+                                '    <meta name="viewport" content="width=device-width, initial-scale=1.0"> \n' +
+                                '    <title>Generated Block</title> \n' +
+                                '    <style> \n' +
+                                '        ' + cssCode + ' \n' +
+                                '    </style> \n' +
+                                '</head> \n' +
+                                '<body> \n' +
+                                '    ' + htmlCode + ' \n' +
+                                '</body> \n' +
+                                '</html>';
+
+            console.log(generatedCode);
+
+            // Download the generated code as an HTML/CSS file
+            var blob = new Blob([generatedCode], { type: 'text/html' });
+            var a = document.createElement('a');
+            a.download = 'generated_block.html';
+            a.href = URL.createObjectURL(blob);
+            a.click();
+        }
+    </script>
+</body>
+</html>
